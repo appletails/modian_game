@@ -6,7 +6,7 @@ star = "[CQ:emoji,id=127775]"
 moon = "[CQ:emoji,id=127769]"
 sun = "[CQ:emoji,id=9728]"
 crown = "[CQ:emoji,id=128081]"
-# 最终调用的抽卡函数
+# 最终调用的招募函数
 
 
 def DrawCard(user_id, nickname):
@@ -46,7 +46,7 @@ def DrawCard(user_id, nickname):
     # 新用户添加到缓存的数据里去
     setting.writejson(userAll, 'chess/user')
     return msg
-# 纯抽卡函数
+# 纯招募函数
 
 
 def card(user):
@@ -223,6 +223,7 @@ def battle(user_id, nickname):
                 msg += "\n【%s】战死沙场，替换成【%s】" % (
                     otherUserIdol["nickname"], otherUser['idol'][-1]["nickname"])
         userIdol['battle'] -= 1  # 可攻击次数减一
+        userAll = levelProtect(userAll)  # 计算战斗力
         setting.writejson(userAll, "chess/user")
     return msg
 # 全军出击
@@ -278,6 +279,7 @@ def allBattle(user_id, nickname):
             userIdol['battle'] -= 1  # 可攻击次数减一
             atc.remove(userIdol)
             num -= 1
+        userAll = levelProtect(userAll)  # 计算战斗力
         setting.writejson(userAll, "chess/user")
     return msg
 # 重置
@@ -571,7 +573,7 @@ def hasLock(user_id):
             return "你已卸载退游"
         userAllIdol = user["idol"] + user["otherIdol"]
         nCard = list(filter(lambda x: x["lock"], userAllIdol))
-        if len(nCard):
+        if not len(nCard):
             return "你没有上锁角色"
         msg = "锁了："
         for item in nCard:
@@ -597,10 +599,10 @@ def dead(user_id):
         for item in nCard:
             msg += "%s、" % item["nickname"]
     return msg
-# 弱小保护
 
 
-def levelProtect(userAll):
+
+def levelProtect(userAll):# 弱小保护
     for item in userAll:
         allIdol = item["idol"] + item["otherIdol"]
         allIdol = sorted(
