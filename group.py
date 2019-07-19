@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from cqhttp import CQHttp
 import setting
-import tool
 import chess
 
 import re
@@ -20,23 +19,29 @@ def handle_msg(context):
     if context['group_id'] in setting.groupid():
         # 关键词回复
         if context['message'] == "招募":
+            msg = "[CQ:at,qq=%d]\n" % context['user_id']
             nickname = context['sender']['card'] if context['sender']['card'] else context['sender']['nickname']
-            msg = chess.DrawCard(context['user_id'],nickname)
+            msg += chess.DrawCard(context['user_id'],nickname)
             bot.send(context, msg)
         elif context['message'] == '我的信息':
-            msg = chess.seachMy(context['user_id'])
+            msg = "[CQ:at,qq=%d]\n" % context['user_id']
+            msg += chess.seachMy(context['user_id'])
             bot.send(context, msg)
         elif context['message'] == '我的角色':
-            msg = chess.idolhMy(context['user_id'])
+            msg = "[CQ:at,qq=%d]\n" % context['user_id']
+            msg += chess.idolhMy(context['user_id'])
             bot.send(context, msg)
         elif context['message'][:3] == "进攻 ":
-            msg = chess.battle(context['user_id'],context['message'][3:])
+            msg = "[CQ:at,qq=%d]\n" % context['user_id']
+            msg += chess.battle(context['user_id'],context['message'][3:])
             bot.send(context, msg)
         elif context['message'][:5] == "全军出击 ":
-            msg = chess.allBattle(context['user_id'],context['message'][5:])
+            msg = "[CQ:at,qq=%d]\n" % context['user_id']
+            msg += chess.allBattle(context['user_id'],context['message'][5:])
             bot.send(context, msg)
         elif context['message'] == "梭哈":
-            msg = chess.suoha(context['user_id'])
+            msg = "[CQ:at,qq=%d]\n" % context['user_id']
+            msg += chess.suoha(context['user_id'])
             bot.send(context, msg)
         elif context['message'] == "重置" and context['user_id'] == 476297692:
             msg = chess.reset()
@@ -45,34 +50,52 @@ def handle_msg(context):
             msg = chess.battlelist()
             bot.send(context, msg)
         elif context['message'][:3] == "出战 ":
-            msg = chess.goBattle(context['user_id'],context['message'][3:])
+            msg = "[CQ:at,qq=%d]\n" % context['user_id']
+            msg += chess.goBattle(context['user_id'],context['message'][3:])
             bot.send(context, msg)
         elif context['message'][:3] == "替换 ":
-            msg = chess.changeBattle(context['user_id'],context['message'][3:])
+            msg = "[CQ:at,qq=%d]\n" % context['user_id']
+            msg += chess.changeBattle(context['user_id'],context['message'][3:])
             bot.send(context, msg)
         elif context['message'] in ["攻击姿态","进攻姿态"]:
-            msg = chess.attack(context['user_id'])
+            msg = "[CQ:at,qq=%d]\n" % context['user_id']
+            msg += chess.attack(context['user_id'])
             bot.send(context, msg)
         elif context['message'] == "防御姿态":
-            msg = chess.defense(context['user_id'])
-            bot.send(context, msg)
-        elif context['message'] == "我的阵容":
-            msg = chess.lineup(context['user_id'])
+            msg = "[CQ:at,qq=%d]\n" % context['user_id']
+            msg += chess.defense(context['user_id'])
             bot.send(context, msg)
         elif context['message'] == "融合":
-            msg = chess.nchange(context['user_id'])
+            msg = "[CQ:at,qq=%d]\n" % context['user_id']
+            msg += chess.nchange(context['user_id'])
             bot.send(context, msg)
         elif context['message'] in ["融合r","融合R"]:
-            msg = chess.nchange(context['user_id'],"R")
+            msg = "[CQ:at,qq=%d]\n" % context['user_id']
+            msg += chess.nchange(context['user_id'],"R")
             bot.send(context, msg)
         elif context['message'][:3] == "我的 ":
-            msg = chess.oneIdol(context['user_id'],context['message'][3:])
+            msg = "[CQ:at,qq=%d]\n" % context['user_id']
+            msg += chess.oneIdol(context['user_id'],context['message'][3:])
             bot.send(context, msg)
         elif context['message'][:3] == "上锁 ":
-            msg = chess.lockOn(context['user_id'],context['message'][3:],False)
+            msg = "[CQ:at,qq=%d]\n" % context['user_id']
+            msg += chess.lockOn(context['user_id'],context['message'][3:],False)
             bot.send(context, msg)
         elif context['message'][:3] == "解锁 ":
-            msg = chess.lockOn(context['user_id'],context['message'][3:],True)
+            msg = "[CQ:at,qq=%d]\n" % context['user_id']
+            msg += chess.lockOn(context['user_id'],context['message'][3:],True)
+            bot.send(context, msg)
+        elif context['message'] == "锁了":
+            msg = "[CQ:at,qq=%d]\n" % context['user_id']
+            msg += chess.hasLock(context['user_id'])
+            bot.send(context, msg)
+        elif context['message'] == "战败":
+            msg = "[CQ:at,qq=%d]\n" % context['user_id']
+            msg += chess.dead(context['user_id'])
+            bot.send(context, msg)
+        elif context['message'] == "我的对手":
+            msg = "[CQ:at,qq=%d]\n" % context['user_id']
+            msg += chess.battlelist(context['user_id'])
             bot.send(context, msg)
 
 
