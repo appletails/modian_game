@@ -94,6 +94,8 @@ def card(user):# 纯招募函数
             hasIdol["life"] += life
             hasIdol["alllife"] += life
             hasIdol["defense"] += defense
+            if hasIdol["level"] in ["R","N"]:
+                hasIdol["lock"] = True
             msg += "\n【%s】升星！\n星级：%s \n[CQ:emoji,id=9876]️%s ↑ %s\n[CQ:emoji,id=128737]️%s ↑ %s\n[CQ:emoji,id=9829]%s ↑ %s" % (
                 hasIdol["nickname"], levelN(hasIdol["star"]), hasIdol["attack"], attack, hasIdol["defense"], defense, hasIdol["life"], life)
     else:
@@ -205,12 +207,12 @@ def battle(user_id, nickname):# 进攻
             msg += "\n【%s】VS【%s】无功而返" % (
                 userIdol["nickname"], otherUserIdol["nickname"])
         elif userIdol['attack'] == otherUserIdol['attack']:  # 攻等于攻
-            msg += "\n【%s】VS【%s】势均力敌" % (
+            msg += "\n【%s】VS【%s】旗鼓相当" % (
                 userIdol["nickname"], otherUserIdol["nickname"])
         elif userIdol['attack'] > otherUserIdol['defense']:  # 攻大于攻
             life = userIdol['attack'] - otherUserIdol['defense']
             otherUserIdol['life'] -= life  # 剩余生命值
-            msg += "\n【%s】VS【%s】势如破竹，造成%s点伤害" % (
+            msg += "\n【%s】VS【%s】势不可挡，造成%s点伤害" % (
                 userIdol["nickname"], otherUserIdol["nickname"], life)
             if otherUserIdol['life'] <= 0:
                 otherUserIdol['life'] = 0
@@ -265,12 +267,12 @@ def allBattle(user_id, nickname):# 全军出击
                 msg += "\n【%s】VS【%s】无功而返" % (
                     userIdol["nickname"], otherUserIdol["nickname"])
             elif userIdol['attack'] == otherUserIdol['attack']:  # 攻等于攻
-                msg += "\n【%s】VS【%s】势均力敌" % (
+                msg += "\n【%s】VS【%s】旗鼓相当" % (
                     userIdol["nickname"], otherUserIdol["nickname"])
             elif userIdol['attack'] > otherUserIdol['defense']:  # 攻大于攻
                 life = userIdol['attack'] - otherUserIdol['defense']
                 otherUserIdol['life'] -= life  # 剩余生命值
-                msg += "\n【%s】VS【%s】势如破竹，造成%s点伤害" % (
+                msg += "\n【%s】VS【%s】势不可挡，造成%s点伤害" % (
                     userIdol["nickname"], otherUserIdol["nickname"], life)
                 if otherUserIdol['life'] <= 0:
                     otherUserIdol['life'] = 0
@@ -428,12 +430,12 @@ def attack(user_id):# 攻击阵容
             key=lambda x: x['attack'], reverse=True) + list(filter(lambda x: x["life"] <= 0, userAllIdol))
         user["idol"] = userAllIdol[:6]
         user["otherIdol"] = userAllIdol[6:]
-        msg = "%s的当前阵容(前六位)：" % user["nickname"][0]
+        print(user["nickname"])
+        msg = "%s的当前阵容：" % user["nickname"][0]
         for item in user["idol"]:
             msg += "\n【%s】%s %s %s [CQ:emoji,id=9876]️%s [CQ:emoji,id=128737]️%s [CQ:emoji,id=9829]%s/%s" % ( item["battle"],levelN(item["star"]), item["level"], item["nickname"],  item["attack"], item["defense"], item["life"], item["alllife"])
         setting.writejson(userAll, 'chess/user')
     return msg
-
 
 def defense(user_id):# 防御阵容
     msg = "请先招募"
@@ -610,3 +612,5 @@ def levelProtect(userAll):# 弱小保护
                      key=lambda i: i["power"],
                      reverse=True)
     return userAll
+
+print(attack(476297692))
