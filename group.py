@@ -23,14 +23,6 @@ def handle_msg(context):
             nickname = context['sender']['card'] if context['sender']['card'] else context['sender']['nickname']
             msg += chess.DrawCard(context['user_id'],nickname)
             bot.send(context, msg)
-        elif context['message'] == '我的信息':
-            msg = "[CQ:at,qq=%d]\n" % context['user_id']
-            msg += chess.seachMy(context['user_id'])
-            bot.send(context, msg)
-        elif context['message'] == '我的角色':
-            msg = "[CQ:at,qq=%d]\n" % context['user_id']
-            msg += chess.idolhMy(context['user_id'])
-            bot.send(context, msg)
         elif context['message'][:3] == "进攻 ":
             msg = "[CQ:at,qq=%d]\n" % context['user_id']
             msg += chess.battle(context['user_id'],context['message'][3:])
@@ -66,11 +58,8 @@ def handle_msg(context):
             msg += chess.defense(context['user_id'])
             bot.send(context, msg)
         elif context['message'] == "融合":
-            msg = "[CQ:at,qq=%d]\n" % context['user_id']
+            msg = "[CQ:at,qq=%d]" % context['user_id']
             msg += chess.nchange(context['user_id'])
-            bot.send(context, msg)
-        elif context['message'] in ["融合r","融合R"]:
-            msg = "[CQ:at,qq=%d]\n" % context['user_id']
             msg += chess.nchange(context['user_id'],"R")
             bot.send(context, msg)
         elif context['message'][:3] == "我的 ":
@@ -97,6 +86,16 @@ def handle_msg(context):
             msg = "[CQ:at,qq=%d]\n" % context['user_id']
             msg += chess.battlelist(context['user_id'])
             bot.send(context, msg)
+        elif context['message'][:2] == '我的':
+            cont = context['message'][2:]
+            if cont  == "信息":
+                msg = "[CQ:at,qq=%d]\n" % context['user_id']
+                msg += chess.seachMy(context['user_id'])
+                bot.send(context, msg)
+            elif cont.upper() in ["N","R","SR","SSR","UR"]:
+                msg = "[CQ:at,qq=%d]\n" % context['user_id']
+                msg += chess.idolhMy(context['user_id'],cont.upper())
+                bot.send(context, msg)
 
 
 # 如果修改了端口，请修改http-API插件的配置文件中对应的post_url

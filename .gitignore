@@ -3,3 +3,4 @@
 /jsons/chess/user.json
 *.log
 tail.py
+test.py
