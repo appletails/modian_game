@@ -1,11 +1,8 @@
 # -*- coding: utf-8 -*-
 import random
 import setting
+import skill
 
-star = "[CQ:emoji,id=127775]"
-moon = "[CQ:emoji,id=127769]"
-sun = "[CQ:emoji,id=9728]"
-crown = "[CQ:emoji,id=128081]"
 gong = "[CQ:emoji,id=9876]️"
 fang = "[CQ:emoji,id=128737]️"
 xue = "[CQ:emoji,id=9829]"
@@ -30,20 +27,20 @@ def DrawCard(user_id, nickname):# 最终调用的招募函数
             user["gold"] -= 1
     else:
         # 用户不存在
-        data = setting.openjson('chess/sr')  # 打开本地user缓存到 userAll
-        idol = list(filter(lambda item: item['nickname'] == "方琪", data))
+        data = setting.openjson('chess/ssr')  # 打开本地user缓存到 userAll
+        idol = random.choice(list(filter(lambda item: item['level'] == "SSR", data)))
         user = {
             "user_id": user_id,
             "nickname": [nickname],
             "gold": 5,
-            "idol": idol,
+            "idol": [idol],
             "otherIdol": [],
             "uninstall": False,
             "power": 0,
             "package":[]
         }
         userAll.append(user)
-        msg = "恭喜你招募到了【SR】的新角色【方琪】！\n初次招募必得大帝，后续招募全看缘分。"
+        msg = "恭喜你招募到了【SSR】的新角色【%s】！\n初次招募必得SSR，后续招募脸。" % idol["nickname"]
     userAll = levelProtect(userAll)  # 计算战斗力
     # 新用户添加到缓存的数据里去
     setting.writejson(userAll, 'chess/user')
@@ -58,15 +55,15 @@ def card(user):# 纯招募函数
         # ur
         idols = setting.openjson("chess/ur")
         idol = random.choice(idols)
-    elif n <= 5:
+    elif n <= 10:
         # ssr
         idols = setting.openjson("chess/ssr")
         idol = random.choice(idols)
-    elif n <= 20:
+    elif n <= 24:
         # sr
         idols = setting.openjson("chess/sr")
         idol = random.choice(idols)
-    elif n <= 45:
+    elif n <= 52:
         # r
         idols = setting.openjson("chess/r")
         idol = random.choice(idols)
@@ -87,17 +84,20 @@ def card(user):# 纯招募函数
         if hasIdol["num"] >= 4:
             hasIdol["star"] += 1
             hasIdol["num"] -= 4
-            attack = random.randint(5, 15)
-            life = random.randint(10, 100)
-            defense = random.randint(5, 15)
+            [attack,defense,life] = setting.dataUp(hasIdol["level"])
             hasIdol["attack"] += attack
             hasIdol["life"] += life
             hasIdol["alllife"] += life
             hasIdol["defense"] += defense
+            msg += "\n【%s】升星！\n星级：%s \n[CQ:emoji,id=9876]️%s ↑ %s\n[CQ:emoji,id=128737]️%s ↑ %s\n[CQ:emoji,id=9829]%s ↑ %s" % (
+                hasIdol["nickname"], setting.levelN(hasIdol["star"]), hasIdol["attack"], attack, hasIdol["defense"], defense, hasIdol["life"], life)
             if hasIdol["level"] in ["R","N"]:
                 hasIdol["lock"] = True
-            msg += "\n【%s】升星！\n星级：%s \n[CQ:emoji,id=9876]️%s ↑ %s\n[CQ:emoji,id=128737]️%s ↑ %s\n[CQ:emoji,id=9829]%s ↑ %s" % (
-                hasIdol["nickname"], levelN(hasIdol["star"]), hasIdol["attack"], attack, hasIdol["defense"], defense, hasIdol["life"], life)
+                msg += "\n状态：[CQ:emoji,id=128274]上锁"
+            if hasIdol["level"] in ["N","R","SR"] and hasIdol["star"] >= 4 and hasIdol["skill"] == "未知": # 获得技能
+                skill = list(filter(lambda x:x["study"], setting.openjson("chess/skill")))
+                hasIdol["skill"] = random.choice(skill)["name"]
+                msg += '\n获得技能：%s' % hasIdol["skill"]
     else:
         userAllIdol.append(idol)
         msg += "【%s】: 【%s】NEW！" % (idol["level"], idol["nickname"])
@@ -142,9 +142,9 @@ def seachMy(user_id):# 我的信息
             return "你已卸载退游"
         userAllIdol = user["idol"] + user["otherIdol"]
         nickname = "你" if "nickname" not in user else user['nickname']
-        msg = "%s一共招募了%s个角色，当前阵容(前六位)：" % (nickname[0], str(len(userAllIdol)))
+        msg = "%s一共招募了%d个角色，当前阵容(%d)：" % (nickname[0], len(userAllIdol), len(user["idol"]))
         for item in user["idol"]:
-            msg += "\n【%s】%s %s %s [CQ:emoji,id=9876]️%s [CQ:emoji,id=128737]️%s [CQ:emoji,id=9829]%s/%s" % ( item["battle"],levelN(item["star"]), item["level"], item["nickname"],  item["attack"], item["defense"], item["life"], item["alllife"])
+            msg += "\n【%s】%s %s %s %s [CQ:emoji,id=9876]️%s [CQ:emoji,id=128737]️%s [CQ:emoji,id=9829]%s/%s" % ( item["battle"],setting.levelN(item["star"]), item["level"], item["nickname"],"*"+item["skill"]+"*" if item["skill"] != "未知" else '', item["attack"], item["defense"], item["life"], item["alllife"])
         msg += "\n剩余招募值：%s" % str(user['gold'])
     return msg
 
@@ -168,7 +168,7 @@ def idolhMy(user_id,level):# 我的角色
     return msg
 
 
-def battle(user_id, nickname):# 进攻
+def battle(user_id, nickname, types = False):# 进攻 types为True时全军出击
     msg = "请先招募"
     userAll = setting.openjson('chess/user')  # 打开本地user缓存到 userAll
     # 判断用户在不在
@@ -181,114 +181,92 @@ def battle(user_id, nickname):# 进攻
             return "没有昵称不可进攻"
         # 过滤出对手
         otherUser = list(filter(
-            lambda item: 'nickname' in item and nickname in item['nickname'], userAll))
+            lambda item: nickname in item['nickname'], userAll))
         if not len(otherUser):
             return "对手不存在"
         # 判断对手是否弱小
         # 1.获取进攻列表 2.看看对手在不在列表
+        otherUser = otherUser[0]
         otherUsers = battlelist(user_id,True)
-        hasOtherUser = list(filter(
-            lambda item: nickname in item['nickname'], otherUsers))
-        if not len(hasOtherUser):
+        if otherUser not in otherUsers:
             return "禁止欺负弱小！"
-        otherUser = hasOtherUser[0]
 
         # 过滤出一个可进攻角色
         atc = list(filter(
             lambda item: item['battle'], user['idol']))
         if not len(atc):
             return "没有可攻击的角色"
-        userIdol = random.choice(atc)
-        otherUserIdol = random.choice(otherUser['idol'])
-        msg = "【%s】对战【%s】：\n" % (
-            user["nickname"][0], nickname)
-
-        if userIdol['attack'] <= otherUserIdol['defense']:  # 攻小于防
-            msg += "\n【%s】VS【%s】无功而返" % (
-                userIdol["nickname"], otherUserIdol["nickname"])
-        elif userIdol['attack'] == otherUserIdol['attack']:  # 攻等于攻
-            msg += "\n【%s】VS【%s】旗鼓相当" % (
-                userIdol["nickname"], otherUserIdol["nickname"])
-        elif userIdol['attack'] > otherUserIdol['defense']:  # 攻大于攻
-            life = userIdol['attack'] - otherUserIdol['defense']
-            otherUserIdol['life'] -= life  # 剩余生命值
-            msg += "\n【%s】VS【%s】势不可挡，造成%s点伤害" % (
-                userIdol["nickname"], otherUserIdol["nickname"], life)
-            if otherUserIdol['life'] <= 0:
-                otherUserIdol['life'] = 0
-                otherUser['idol'].remove(otherUserIdol)
-                otherUser['idol'].append(otherUser['otherIdol'][0])
-                otherUser['otherIdol'].remove(otherUser['otherIdol'][0])
-                otherUser['otherIdol'].append(otherUserIdol)
-                msg += "\n【%s】战死沙场，替换成【%s】" % (
-                    otherUserIdol["nickname"], otherUser['idol'][-1]["nickname"])
-        userIdol['battle'] -= 1  # 可攻击次数减一
-        userAll = levelProtect(userAll)  # 计算战斗力
-        setting.writejson(userAll, "chess/user")
-    return msg
-
-
-def allBattle(user_id, nickname):# 全军出击
-    msg = "请先招募"
-    userAll = setting.openjson('chess/user')  # 打开本地user缓存到 userAll
-    # 判断用户在不在
-    user = list(filter(lambda item: item['user_id'] == user_id, userAll))
-    if len(user):
-        user = user[0]
-        if user["uninstall"]:
-            return "你已卸载退游"
-        if "nickname" not in user:
-            return "没有昵称不可进攻"
-        # 过滤出对手
-        otherUser = list(filter(
-            lambda item: 'nickname' in item and nickname in item['nickname'], userAll))
-        if not len(otherUser):
-            return "对手不存在"
-        # 判断对手是否弱小
-        # 1.获取进攻列表 2.看看对手在不在列表
-        otherUsers = battlelist(user_id,True)
-        hasOtherUser = list(filter(
-            lambda item: nickname in item['nickname'], otherUsers))
-        if not len(hasOtherUser):
-            return "禁止欺负弱小！"
-        otherUser = hasOtherUser[0]
-
-        # 过滤出一个可进攻角色
-        atc = list(filter(
-            lambda item: item['battle'], user['idol']))
-        if not len(atc):
-            return "没有可攻击的角色"
-        num = len(atc)
+        # 这里开始是战斗片段
         msg = "【%s】对战【%s】：\n" % (user["nickname"][0], nickname)
+        num = 1
+        if types:
+            num = len(atc)
         while num:
-            userIdol = random.choice(atc)
-            otherUserIdol = random.choice(otherUser['idol'])
-            if userIdol['attack'] <= otherUserIdol['defense']:  # 攻小于防
-                msg += "\n【%s】VS【%s】无功而返" % (
-                    userIdol["nickname"], otherUserIdol["nickname"])
-            elif userIdol['attack'] == otherUserIdol['attack']:  # 攻等于攻
-                msg += "\n【%s】VS【%s】旗鼓相当" % (
-                    userIdol["nickname"], otherUserIdol["nickname"])
-            elif userIdol['attack'] > otherUserIdol['defense']:  # 攻大于攻
-                life = userIdol['attack'] - otherUserIdol['defense']
-                otherUserIdol['life'] -= life  # 剩余生命值
-                msg += "\n【%s】VS【%s】势不可挡，造成%s点伤害" % (
-                    userIdol["nickname"], otherUserIdol["nickname"], life)
-                if otherUserIdol['life'] <= 0:
-                    otherUserIdol['life'] = 0
-                    otherUser['idol'].remove(otherUserIdol)
-                    otherUser['idol'].append(otherUser['otherIdol'][0])
-                    otherUser['otherIdol'].remove(otherUser['otherIdol'][0])
-                    otherUser['otherIdol'].append(otherUserIdol)
-                    msg += "\n【%s】战死沙场，替换成【%s】" % (
-                        otherUserIdol["nickname"], otherUser['idol'][-1]["nickname"])
-            userIdol['battle'] -= 1  # 可攻击次数减一
-            atc.remove(userIdol)
+            [msgs,atc,user,otherUser] = sBattle(atc,user,otherUser)
+            msg += msgs
             num -= 1
         userAll = levelProtect(userAll)  # 计算战斗力
         setting.writejson(userAll, "chess/user")
     return msg
 
+def sBattle(atc,user,otherUser): # 进攻部分
+    msgs = ''
+    userIdol = random.choice(atc)
+    otherUserIdol = random.choice(otherUser['idol'])
+    battleSkill = True
+    # 进入战斗
+    if userIdol["skill"] != "未知" or otherUserIdol["skill"] != "未知":
+        # 技能战斗部分
+        if otherUserIdol["skill"] == "绝对领域" and random.uniform(1, 100)<=15:
+            msgs += "\n【%s】VS【%s *绝对领域*】未能造成伤害" % (
+                userIdol["nickname"], otherUserIdol["nickname"])
+            battleSkill = False
+
+        elif userIdol["skill"] == "一击致命" and random.uniform(1, 100)<=7:
+            [msgs,user,userIdol,otherUser,otherUserIdol] = skill.BlastABall(user,userIdol,otherUser,otherUserIdol)
+            battleSkill = False
+
+        elif userIdol["skill"] == "背刺" and random.uniform(1, 100)<=30:
+            [msgs,user,userIdol,otherUser,otherUserIdol] = skill.Backstab(user,userIdol,otherUser,otherUserIdol)
+            battleSkill = False
+
+        elif userIdol["skill"] == "觉醒" and userIdol['attack'] > otherUserIdol['defense'] and random.uniform(1, 100)<=20:
+            # 确定会造成伤害
+            [msgs,user,userIdol,otherUser,otherUserIdol] = skill.awaken(user,userIdol,otherUser,otherUserIdol)
+            battleSkill = False
+
+        elif userIdol["skill"] == "嗜血" and userIdol['attack'] > otherUserIdol['defense'] and random.uniform(1, 100)<=30:
+            # 确定会造成伤害
+            life = userIdol['attack'] - otherUserIdol['defense']
+            msgs += "\n【%s *嗜血*】VS【%s】造成%s点伤害，恢复%s生命" % (
+                userIdol["nickname"], otherUserIdol["nickname"], life, life)
+                
+            otherUserIdol['life'] -= life  # 剩余生命值
+            userIdol['life'] += life  # 剩余生命值
+            [msga,user,userIdol,otherUser,otherUserIdol] = skill.DeathNot(user,userIdol,otherUser,otherUserIdol)
+            msgs += msga
+            battleSkill = False
+            
+    if battleSkill: 
+        # 正常战斗部分
+        if userIdol['attack'] < otherUserIdol['defense']:  # 攻小于防
+            msgs += "\n【%s】VS【%s】无功而返" % (
+                userIdol["nickname"], otherUserIdol["nickname"])
+        elif userIdol['attack'] == otherUserIdol['defense']:  # 攻等于防
+            msgs += "\n【%s】VS【%s】旗鼓相当" % (
+                userIdol["nickname"], otherUserIdol["nickname"])
+        elif userIdol['attack'] > otherUserIdol['defense']:  # 攻大于防
+            life = userIdol['attack'] - otherUserIdol['defense']
+            msgs += "\n【%s】VS【%s】造成%s点伤害" % (
+                userIdol["nickname"], otherUserIdol["nickname"], life)
+                
+            otherUserIdol['life'] -= life  # 剩余生命值
+            [msga,user,userIdol,otherUser,otherUserIdol] = skill.DeathNot(user,userIdol,otherUser,otherUserIdol)
+            msgs += msga
+            
+    userIdol['battle'] -= 1  # 可攻击次数减一
+    atc.remove(userIdol)
+    return [msgs,atc,user,otherUser]
 
 def reset():# 重置
     userAll = setting.openjson('chess/user')  # 打开本地user缓存到 userAll
@@ -301,13 +279,17 @@ def reset():# 重置
 
 
 def battlelist(user_id=False,reDict = False):# 攻击列表
-    msg = ""
+    msg = "请先招募"
     userAll = setting.openjson('chess/user')  # 打开本地user缓存到 userAll
+    if not len(userAll):
+        return msg
+    userAll = levelProtect(userAll)  # 计算战斗力
+    setting.writejson(userAll, 'chess/user')
     if user_id:
         # 判断用户在不在
         user = list(filter(lambda item: item['user_id'] == user_id, userAll))
         if not len(user):
-            return "请先招募"
+            return msg
         # 判断退游
         user = user[0]
         if user["uninstall"]:
@@ -320,9 +302,9 @@ def battlelist(user_id=False,reDict = False):# 攻击列表
             userAll = users
         if reDict:
             return userAll
+    msg = ''
     for item in userAll:
-        if "nickname" in item:
-            msg += '%s[%s]  %d\n' % (item["nickname"][0],item["nickname"][-1], item["power"])
+        msg += '%s[%s]  %d\n' % (item["nickname"][0],item["nickname"][-1], item["power"])
     return msg
 
 def goBattle(user_id, idolList):# 派出阵容
@@ -358,10 +340,9 @@ def goBattle(user_id, idolList):# 派出阵容
             userAllIdol, key=lambda x: x['attack'], reverse=True)
         msg = "%s的当前阵容(前六位)：" % user["nickname"][0]
         for item in user["idol"]:
-            msg += "\n%s %s %s 攻：%s 防：%s 血：%s/%s 进攻：%s" % (
-                levelN(item["star"]), item["level"], item["nickname"],  item["attack"], item["defense"], item["life"], item["alllife"], item["battle"])
+            msg += "\n【%s】%s %s %s %s [CQ:emoji,id=9876]️%s [CQ:emoji,id=128737]️%s [CQ:emoji,id=9829]%s/%s" % ( item["battle"],setting.levelN(item["star"]), item["level"], item["nickname"],"*"+item["skill"]+"*" if item["skill"] != "未知" else '', item["attack"], item["defense"], item["life"], item["alllife"])
         setting.writejson(userAll, 'chess/user')
-        return msg
+    return msg
 
 
 def changeBattle(user_id, idolList):# 替换角色
@@ -407,37 +388,13 @@ def changeBattle(user_id, idolList):# 替换角色
             user["idol"], key=lambda x: x['attack'], reverse=True)
         user["otherIdol"] = sorted(
             user["otherIdol"], key=lambda x: x['attack'], reverse=True)
-        msg = "%s的当前阵容(前六位)：" % user["nickname"][0]
-        for item in user["idol"]:
-            msg += "\n%s %s %s 攻：%s 防：%s 血：%s/%s 进攻：%s" % (
-                levelN(item["star"]), item["level"], item["nickname"],  item["attack"], item["defense"], item["life"], item["alllife"], item["battle"])
-        setting.writejson(userAll, 'chess/user')
-        return msg
-
-
-def attack(user_id):# 攻击阵容
-    msg = "请先招募"
-    userAll = setting.openjson('chess/user')  # 打开本地user缓存到 userAll
-    # 判断用户在不在
-    user = list(filter(lambda item: item['user_id'] == user_id, userAll))
-    if len(user):
-        user = user[0]
-        if user["uninstall"]:
-            return "你已卸载退游"
-        userAllIdol = user["idol"] + user["otherIdol"]
-        userAllIdol = sorted(
-            list(filter(lambda x: x["life"] > 0, userAllIdol)),
-            key=lambda x: x['attack'], reverse=True) + list(filter(lambda x: x["life"] <= 0, userAllIdol))
-        user["idol"] = userAllIdol[:6]
-        user["otherIdol"] = userAllIdol[6:]
-        print(user["nickname"])
         msg = "%s的当前阵容：" % user["nickname"][0]
         for item in user["idol"]:
-            msg += "\n【%s】%s %s %s [CQ:emoji,id=9876]️%s [CQ:emoji,id=128737]️%s [CQ:emoji,id=9829]%s/%s" % ( item["battle"],levelN(item["star"]), item["level"], item["nickname"],  item["attack"], item["defense"], item["life"], item["alllife"])
+            msg += "\n【%s】%s %s %s %s [CQ:emoji,id=9876]️%s [CQ:emoji,id=128737]️%s [CQ:emoji,id=9829]%s/%s" % ( item["battle"],setting.levelN(item["star"]), item["level"], item["nickname"],"*"+item["skill"]+"*" if item["skill"] != "未知" else '', item["attack"], item["defense"], item["life"], item["alllife"])
         setting.writejson(userAll, 'chess/user')
     return msg
 
-def defense(user_id):# 防御阵容
+def attack(user_id,typs = False):# 攻击阵容 typs 防御阵容
     msg = "请先招募"
     userAll = setting.openjson('chess/user')  # 打开本地user缓存到 userAll
     # 判断用户在不在
@@ -447,14 +404,25 @@ def defense(user_id):# 防御阵容
         if user["uninstall"]:
             return "你已卸载退游"
         userAllIdol = user["idol"] + user["otherIdol"]
-        userAllIdol = sorted(
-            list(filter(lambda x: x["life"] > 0, userAllIdol)),
-            key=lambda x: x['defense'], reverse=True) + list(filter(lambda x: x["life"] <= 0, userAllIdol))
-        user["idol"] = userAllIdol[:6]
-        user["otherIdol"] = userAllIdol[6:]
-        msg = "%s的当前阵容：" % user["nickname"][0]
+        if typs: # 防御姿态
+            userAllIdols = sorted(
+                list(filter(lambda x: x["life"] > 0, userAllIdol)),
+                key=lambda x: x['defense'], reverse=True)
+        else: # 攻击姿态
+            userAllIdols = sorted(
+                list(filter(lambda x: x["life"] > 0, userAllIdol)),
+                key=lambda x: x['attack'], reverse=True)
+        if len(userAllIdols)<6: # 存活角色不足6个时候的操作
+            user["idol"] = userAllIdols
+            user["otherIdol"] = list(filter(lambda x: x["life"] <= 0, userAllIdol))
+        else:
+            # 将0血角色滞后
+            userAllIdol = userAllIdols + list(filter(lambda x: x["life"] <= 0, userAllIdol))
+            user["idol"] = userAllIdol[:6]
+            user["otherIdol"] = userAllIdol[6:]
+        msg = "当前阵容(%d)：" % len(user["idol"])
         for item in user["idol"]:
-            msg += "\n【%s】%s %s %s [CQ:emoji,id=9876]️%s [CQ:emoji,id=128737]️%s [CQ:emoji,id=9829]%s/%s" % ( item["battle"],levelN(item["star"]), item["level"], item["nickname"],  item["attack"], item["defense"], item["life"], item["alllife"])
+            msg += "\n【%s】%s %s %s %s [CQ:emoji,id=9876]️%s [CQ:emoji,id=128737]️%s [CQ:emoji,id=9829]%s/%s" % ( item["battle"],setting.levelN(item["star"]), item["level"], item["nickname"],"*"+item["skill"]+"*" if item["skill"] != "未知" else '', item["attack"], item["defense"], item["life"], item["alllife"])
         setting.writejson(userAll, 'chess/user')
     return msg
 
@@ -466,14 +434,14 @@ def nchange(user_id, m="N"):# 融化
         n = 5
     else:
         return ''
-    msg = "请先招募"
+    msg = "\n请先招募"
     userAll = setting.openjson('chess/user')  # 打开本地user缓存到 userAll
     # 判断用户在不在
     user = list(filter(lambda item: item['user_id'] == user_id, userAll))
     if len(user):
         user = user[0]
         if user["uninstall"]:
-            return "你已卸载退游"
+            return "\n你已卸载退游"
         nCard = list(
             filter(lambda x: x["level"] == m and not x["lock"], user["otherIdol"]))
         user["otherIdol"] = list(
@@ -510,13 +478,6 @@ def nchange(user_id, m="N"):# 融化
     return msg
 
 
-def levelN(num):# 计算星
-    starN = num % 4
-    moonN = int(num/4)
-    sunN = int(moonN/4)
-    crownN = int(sunN/4)
-    return crownN * crown + sunN % 4 * sun + moonN % 4 * moon + starN * star
-
 
 def oneIdol(user_id, nickname):# 查单个
     msg = "请先招募"
@@ -534,7 +495,9 @@ def oneIdol(user_id, nickname):# 查单个
         nCard = nCard[0]
         # 计算星级显示
         msg = "【%s】的【%s】：\n稀有度：%s\n攻击：[CQ:emoji,id=9876]️%s\n防御：[CQ:emoji,id=128737]️%s\n血量：[CQ:emoji,id=9829]%s/%s\n星级：%s\n拥有数量：%s\n状态：%s" % (
-            user["nickname"][0], nCard["nickname"], nCard["level"], nCard["attack"], nCard["defense"], nCard["life"], nCard["alllife"], levelN(nCard["star"]), nCard["num"], "[CQ:emoji,id=128274]上锁" if nCard["lock"] else "[CQ:emoji,id=128275]未上锁")
+            user["nickname"][0], nCard["nickname"], nCard["level"], nCard["attack"], nCard["defense"], nCard["life"], nCard["alllife"], setting.levelN(nCard["star"]), nCard["num"], "[CQ:emoji,id=128274]上锁" if nCard["lock"] else "[CQ:emoji,id=128275]未上锁")
+        if nCard["skill"] != "未知":
+            msg +="\n技能：%s" % nCard["skill"]
     return msg
 
 
@@ -590,7 +553,7 @@ def dead(user_id):# 已阵亡
             return "你已卸载退游"
         userAllIdol = user["idol"] + user["otherIdol"]
         nCard = list(filter(lambda x: x["life"] <= 0, userAllIdol))
-        if len(nCard):
+        if not len(nCard):
             return "你没有战败角色"
         msg = "战败："
         for item in nCard:
@@ -602,15 +565,101 @@ def levelProtect(userAll):# 弱小保护
     for item in userAll:
         allIdol = item["idol"] + item["otherIdol"]
         allIdol = sorted(
-            list(filter(lambda x: x["life"] > 0, item["idol"])), key=lambda x: x['attack'], reverse=True)
+            list(filter(lambda x: x["life"] > 0, allIdol)), key=lambda x: x['attack'], reverse=True)
         if len(allIdol) < 6:
             item["power"] = 0
         else:
-            item["power"] = int(sum([allIdol[i]["attack"]/0.15+allIdol[i]
-                                     ["defense"]/0.15+allIdol[i]["alllife"] for i in range(6)]))
+            item["power"] = int(sum([allIdol[i]["attack"]/0.15+allIdol[i]["defense"]/0.15+allIdol[i]["alllife"]*0.7 for i in range(6)]))
     userAll = sorted(userAll,
                      key=lambda i: i["power"],
                      reverse=True)
     return userAll
 
-print(attack(476297692))
+def skills():
+    msg = "技能列表："
+    data = setting.openjson('chess/skill')
+    for item in data:
+        msg += "\n%s：%s" % (item["name"],item["msg"])
+    return msg
+
+def showSkill(user_id,name):
+    msg = "请先招募"
+    userAll = setting.openjson('chess/user')  # 打开本地user缓存到 userAll
+    # 判断用户在不在
+    user = list(filter(lambda item: item['user_id'] == user_id, userAll))
+    if len(user):
+        user = user[0]
+        if user["uninstall"]:
+            return "你已卸载退游"
+        userAllIdol = user["idol"] + user["otherIdol"]
+        nCard = list(filter(lambda x: x["skill"] == name, userAllIdol))
+        if not len(nCard):
+            return "你没有 *%s* 的角色" % name
+        msg = "*%s*：" % name
+        for item in nCard:
+            msg += "%s、" % item["nickname"]
+    return msg
+
+def goSkill(user_id,name):
+    msg = "请先招募"
+    userAll = setting.openjson('chess/user')  # 打开本地user缓存到 userAll
+    # 判断用户在不在
+    user = list(filter(lambda item: item['user_id'] == user_id, userAll))
+    if len(user):
+        user = user[0]
+        if user["uninstall"]:
+            return "你已卸载退游"
+        userAllIdol = user["idol"] + user["otherIdol"]
+        # 活着的角色
+        userAllIdols = list(filter(lambda x: x["life"] > 0, userAllIdol))
+        # 活着的角色里有技能的
+        hasName = sorted(list(filter(lambda x: x["skill"] == name, userAllIdols)),
+                key=lambda i: i['attack'], reverse=True)
+        # 活着的角色里么有技能的
+        noName = sorted(list(filter(lambda x: x["skill"] != name, userAllIdols)),
+                key=lambda i: i['attack'], reverse=True)
+        
+        userAllIdolDead =list(filter(lambda x: x["life"] <= 0, userAllIdol))
+        # 拼接全部角色
+        userAllIdol = hasName + noName + userAllIdolDead
+        user["idol"] = userAllIdol[:6]
+        user["otherIdol"] = userAllIdol[6:]
+        msg = "当前阵容(%d)：" % len(user["idol"])
+        for item in user["idol"]:
+            msg += "\n【%s】%s %s %s %s [CQ:emoji,id=9876]️%s [CQ:emoji,id=128737]️%s [CQ:emoji,id=9829]%s/%s" % ( item["battle"],setting.levelN(item["star"]), item["level"], item["nickname"],"*"+item["skill"]+"*" if item["skill"] != "未知" else '', item["attack"], item["defense"], item["life"], item["alllife"])
+        setting.writejson(userAll, 'chess/user')
+    return msg
+
+def seachPack(user_id):
+    msg = "请先招募"
+    userAll = setting.openjson('chess/user')  # 打开本地user缓存到 userAll
+    # 判断用户在不在
+    user = list(filter(lambda item: item['user_id'] == user_id, userAll))
+    if len(user):
+        user = user[0]
+        if user["uninstall"]:
+            return "你已卸载退游"
+        if not len(user["package"]):
+            return "你没有道具"
+        msg = "你的道具："
+        for item in user["package"]:
+            msg += "%s*%d、" % (item["name"],item["num"])
+    return msg
+
+def blood(user_id):
+    msg = "请先招募"
+    userAll = setting.openjson('chess/user')  # 打开本地user缓存到 userAll
+    # 判断用户在不在
+    user = list(filter(lambda item: item['user_id'] == user_id, userAll))
+    if len(user):
+        user = user[0]
+        if user["uninstall"]:
+            return "你已卸载退游"
+        # 过滤出残血
+        noblood = sorted(list(filter(lambda x:x["life"] < x["alllife"] and x["life"]>0,user["idol"]+user["otherIdol"])),key=lambda i:i["life"])
+        if not len(noblood):
+            return "你没有残血"
+        msg = "你的残血："
+        for item in noblood:
+            msg += "%s %d/%d、" % (item["nickname"],item["life"],item["alllife"])
+    return msg

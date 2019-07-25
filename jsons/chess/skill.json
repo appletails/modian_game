@@ -1,0 +1,38 @@
+[
+  {
+    "name":"绝对领域",
+    "msg":"不会受到任何形式的伤害",
+    "priority": 6,
+    "study":true
+  },
+  {
+    "name":"一击致命",
+    "msg":"直接杀死对手",
+    "priority": 5,
+    "study":false
+  },
+  {
+    "name":"背刺",
+    "msg":"无视防御，直接造成全额伤害",
+    "priority": 4,
+    "study":true
+  },
+  {
+    "name":"觉醒",
+    "msg":"造成伤害时伤害值翻10倍",
+    "priority": 3,
+    "study":true
+  },
+  {
+    "name":"嗜血",
+    "msg":"造成伤害时回复等量生命值",
+    "priority": 2,
+    "study":true
+  },
+  {
+    "name":"尖刺防御",
+    "msg":"受到伤害时反弹100%伤害",
+    "priority": 1,
+    "study":true
+  }
+]
