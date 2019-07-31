@@ -3,8 +3,9 @@ from cqhttp import CQHttp
 import setting
 import chess
 import pack
-
 import re
+import datetime
+
 
 bot = CQHttp(api_root='http://127.0.0.1:5700/')
 # 也可以添加access_token和secret，更加安全
@@ -16,6 +17,9 @@ bot = CQHttp(api_root='http://127.0.0.1:5700/')
 # 群消息操作
 @bot.on_message('group')
 def handle_msg(context):
+    start = datetime.datetime.now().hour
+    if int(start) >= 1 and  int(start) <= 6:
+        return
     # 开始进行关键字触发
     if context['group_id'] in setting.groupid():
         # 关键词回复
@@ -28,14 +32,26 @@ def handle_msg(context):
             if not len(context['message'][3:]):
                 return
             msg = "[CQ:at,qq=%d]\n" % context['user_id']
-            msg += chess.battle(context['user_id'],context['message'][3:])
-            bot.send(context, msg)
+            cont = chess.battle(context['user_id'],context['message'][3:])
+            if cont:
+                msg += cont
+                bot.send(context, msg)
         elif context['message'][:5] == "全军出击 ":
             if not len(context['message'][5:]):
                 return
             msg = "[CQ:at,qq=%d]\n" % context['user_id']
-            msg += chess.battle(context['user_id'],context['message'][5:],True)
-            bot.send(context, msg)
+            cont = chess.battle(context['user_id'],context['message'][5:],True)
+            if cont:
+                msg += cont
+                bot.send(context, msg)
+        elif context['message'][:3] == "复仇 ":
+            if not len(context['message'][3:]):
+                return
+            msg = "[CQ:at,qq=%d]\n" % context['user_id']
+            cont = chess.battle(context['user_id'],context['message'][3:],True,False)
+            if cont:
+                msg += cont
+                bot.send(context, msg)
         elif context['message'] == "梭哈":
             msg = "[CQ:at,qq=%d]\n" % context['user_id']
             msg += chess.suoha(context['user_id'])
@@ -43,10 +59,10 @@ def handle_msg(context):
         elif context['message'] == "重置" and context['user_id'] == 476297692:
             msg = chess.reset()
             bot.send(context, msg)
-        elif context['message'] == "进攻list":
-            msg = chess.battlelist()
-            if msg:
-                bot.send(context, msg)
+        # elif context['message'] == "进攻list":
+        #     msg = chess.battlelist()
+        #     if msg:
+        #         bot.send(context, msg)
         elif context['message'][:3] == "出战 ":
             if not len(context['message'][3:]):
                 return
@@ -73,6 +89,7 @@ def handle_msg(context):
             msg += msga
             if msga != "请先招募":
                 msg += chess.nchange(context['user_id'],"R")
+                msg += chess.nchange(context['user_id'],"SR")
             bot.send(context, msg)
         elif context['message'][:3] == "我的 ":
             if not len(context['message'][3:]):
@@ -100,10 +117,10 @@ def handle_msg(context):
             msg = "[CQ:at,qq=%d]\n" % context['user_id']
             msg += chess.dead(context['user_id'])
             bot.send(context, msg)
-        elif context['message'] == "我的对手":
-            msg = "[CQ:at,qq=%d]\n" % context['user_id']
-            msg += chess.battlelist(context['user_id'])
-            bot.send(context, msg)
+        # elif context['message'] == "我的对手":
+        #     msg = "[CQ:at,qq=%d]\n" % context['user_id']
+        #     msg += chess.battlelist(context['user_id'])
+        #     bot.send(context, msg)
         elif context['message'][:2] == '我的':
             cont = context['message'][2:]
             if cont  == "信息":
@@ -114,14 +131,14 @@ def handle_msg(context):
                 msg = "[CQ:at,qq=%d]\n" % context['user_id']
                 msg += chess.seachPack(context['user_id'])
                 bot.send(context, msg)
-            elif cont.upper() in ["N","R","SR","SSR","UR"]:
-                msg = "[CQ:at,qq=%d]\n" % context['user_id']
-                msg += chess.idolhMy(context['user_id'],cont.upper())
-                bot.send(context, msg)
-            elif cont in [i["name"] for i in setting.openjson("chess/skill")]:
-                msg = "[CQ:at,qq=%d]\n" % context['user_id']
-                msg += chess.showSkill(context['user_id'],cont)
-                bot.send(context, msg)
+            # elif cont.upper() in ["N","R","SR","SSR","UR"]:
+            #     msg = "[CQ:at,qq=%d]\n" % context['user_id']
+            #     msg += chess.idolhMy(context['user_id'],cont.upper())
+            #     bot.send(context, msg)
+            # elif cont in [i["name"] for i in setting.openjson("chess/skill")]:
+            #     msg = "[CQ:at,qq=%d]\n" % context['user_id']
+            #     msg += chess.showSkill(context['user_id'],cont)
+            #     bot.send(context, msg)
         elif context['message'] == "技能":
             msg = chess.skills()
             bot.send(context, msg)
@@ -162,6 +179,16 @@ def handle_msg(context):
         elif context['message'] == "残血":
             msg = "[CQ:at,qq=%d]\n" % context['user_id']
             msg += chess.blood(context['user_id'])
+            bot.send(context, msg)
+        elif context['message'] == "仇人":
+            msg = "[CQ:at,qq=%d]\n" % context['user_id']
+            cont = chess.revenge(context['user_id'])
+            if cont:
+                msg += cont
+                bot.send(context, msg)
+        elif context['message'] == "来个对手":
+            msg = "[CQ:at,qq=%d]\n" % context['user_id']
+            msg += chess.getDui(context['user_id'])
             bot.send(context, msg)
 
 

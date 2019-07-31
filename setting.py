@@ -50,29 +50,29 @@ def levelN(num):# 计算星
 def dataUp(level):
   linkData = {
     "N":{
-      "attack":[1,6],
-      "defense":[1,3],
-      "life":[4,6]
+      "attack":[2,5],
+      "defense":[1,2],
+      "life":[1,5]
     },
     "R":{
-      "attack":[2,7],
-      "defense":[1,5],
-      "life":[6,8]
+      "attack":[3,7],
+      "defense":[1,3],
+      "life":[2,7]
     },
     "SR":{
-      "attack":[3,8],
-      "defense":[2,6],
-      "life":[8,10]
+      "attack":[5,12],
+      "defense":[2,5],
+      "life":[3,10]
     },
     "SSR":{
-      "attack":[4,9],
-      "defense":[3,7],
-      "life":[10,12]
+      "attack":[7,15],
+      "defense":[3,6],
+      "life":[4,12]
     },
     "UR":{
-      "attack":[5,10],
+      "attack":[9,17],
       "defense":[4,8],
-      "life":[12,14]
+      "life":[5,13]
     }
   }
   attack = random.randint(linkData[level]["attack"][0],linkData[level]["attack"][1])

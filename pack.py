@@ -22,11 +22,22 @@ def lvUp(user_id,nickname): # 小星星
             filter(lambda item: item['name'] == "小星星", user["package"]))
         if not len(hasProp):
             return "你没有小星星"
-        hasProp[0]["num"] -= 1
+        hasIdol = has[0]
+        # 根据等级扣除小星星，最多四个
+        need = {
+            "N":1,
+            "R":2,
+            "SR":3,
+            "SSR":4,
+            "UR":4
+        }
+        needStar = need[hasIdol["level"]]
+        if hasProp[0]["num"] < needStar:
+            return "小星星数量不够"
+        hasProp[0]["num"] -= needStar
         if hasProp[0]["num"] <= 0:
             user["package"].remove(hasProp[0])
         # 开始升级
-        hasIdol = has[0]
         hasIdol["star"] += 1
         [attack,defense,life] = setting.dataUp(hasIdol["level"])
         hasIdol["attack"] += attack

@@ -41,14 +41,14 @@
     {
         "nickname": "费沁源",
         "attack": 33,
-        "life": 163,
+        "life": 140,
         "defense": 13,
         "battle": 1,
         "star": 1,
         "level": "SR",
         "skill": "未知",
         "num": 1,
-        "alllife": 163,
+        "alllife": 140,
         "lock": false
     },
     {
@@ -93,14 +93,14 @@
     {
         "nickname": "冯薪朵",
         "attack": 38,
-        "life": 147,
+        "life": 140,
         "defense": 15,
         "battle": 1,
         "star": 1,
         "level": "SR",
         "skill": "未知",
         "num": 1,
-        "alllife": 147,
+        "alllife": 140,
         "lock": false
     },
     {
@@ -158,14 +158,14 @@
     {
         "nickname": "陈琳",
         "attack": 43,
-        "life": 167,
+        "life": 140,
         "defense": 14,
         "battle": 1,
         "star": 1,
         "level": "SR",
         "skill": "未知",
         "num": 1,
-        "alllife": 167,
+        "alllife": 140,
         "lock": false
     },
     {
@@ -249,14 +249,14 @@
     {
         "nickname": "万丽娜",
         "attack": 45,
-        "life": 170,
+        "life": 140,
         "defense": 13,
         "battle": 1,
         "star": 1,
         "level": "SR",
         "skill": "未知",
         "num": 1,
-        "alllife": 170,
+        "alllife": 140,
         "lock": false
     },
     {
@@ -353,14 +353,14 @@
     {
         "nickname": "邵雪聪",
         "attack": 38,
-        "life": 144,
+        "life": 140,
         "defense": 14,
         "battle": 1,
         "star": 1,
         "level": "SR",
         "skill": "未知",
         "num": 1,
-        "alllife": 144,
+        "alllife": 140,
         "lock": false
     },
     {

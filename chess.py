@@ -2,6 +2,7 @@
 import random
 import setting
 import skill
+import copy
 
 gong = "[CQ:emoji,id=9876]️"
 fang = "[CQ:emoji,id=128737]️"
@@ -33,11 +34,13 @@ def DrawCard(user_id, nickname):# 最终调用的招募函数
             "user_id": user_id,
             "nickname": [nickname],
             "gold": 5,
-            "idol": [idol],
-            "otherIdol": [],
             "uninstall": False,
             "power": 0,
-            "package":[]
+            "package":[],
+            "revenge":[],
+            "idol": [idol],
+            "otherIdol": [],
+            "KO":100
         }
         userAll.append(user)
         msg = "恭喜你招募到了【SSR】的新角色【%s】！\n初次招募必得SSR，后续招募脸。" % idol["nickname"]
@@ -91,7 +94,7 @@ def card(user):# 纯招募函数
             hasIdol["defense"] += defense
             msg += "\n【%s】升星！\n星级：%s \n[CQ:emoji,id=9876]️%s ↑ %s\n[CQ:emoji,id=128737]️%s ↑ %s\n[CQ:emoji,id=9829]%s ↑ %s" % (
                 hasIdol["nickname"], setting.levelN(hasIdol["star"]), hasIdol["attack"], attack, hasIdol["defense"], defense, hasIdol["life"], life)
-            if hasIdol["level"] in ["R","N"]:
+            if hasIdol["level"] in ["SR","R","N"]:
                 hasIdol["lock"] = True
                 msg += "\n状态：[CQ:emoji,id=128274]上锁"
             if hasIdol["level"] in ["N","R","SR"] and hasIdol["star"] >= 4 and hasIdol["skill"] == "未知": # 获得技能
@@ -168,7 +171,7 @@ def idolhMy(user_id,level):# 我的角色
     return msg
 
 
-def battle(user_id, nickname, types = False):# 进攻 types为True时全军出击
+def battle(user_id, nickname, types = False,re = True):# 进攻 types为True时全军出击
     msg = "请先招募"
     userAll = setting.openjson('chess/user')  # 打开本地user缓存到 userAll
     # 判断用户在不在
@@ -176,24 +179,28 @@ def battle(user_id, nickname, types = False):# 进攻 types为True时全军出�
     if len(user):
         user = user[0]
         if user["uninstall"]:
-            return "你已卸载退游"
-        if "nickname" not in user:
-            return "没有昵称不可进攻"
+            return False
+        if nickname in user["nickname"]:
+            return False
         # 过滤出对手
         otherUser = list(filter(
             lambda item: nickname in item['nickname'], userAll))
         if not len(otherUser):
-            return "对手不存在"
+            return False
         # 判断对手是否弱小
         # 1.获取进攻列表 2.看看对手在不在列表
         otherUser = otherUser[0]
-        otherUsers = battlelist(user_id,True)
-        if otherUser not in otherUsers:
-            return "禁止欺负弱小！"
+        # otherUsers = battlelist(user_id,True)
+        # if otherUser not in otherUsers:
+        #     return "禁止欺负弱小！"
 
         # 过滤出一个可进攻角色
-        atc = list(filter(
-            lambda item: item['battle'], user['idol']))
+        # 进攻
+        if re:
+            atc = list(filter(
+                lambda item: item['battle'], user['idol']))
+        else:
+            atc = copy.deepcopy(user['idol'])
         if not len(atc):
             return "没有可攻击的角色"
         # 这里开始是战斗片段
@@ -202,6 +209,34 @@ def battle(user_id, nickname, types = False):# 进攻 types为True时全军出�
         if types:
             num = len(atc)
         while num:
+            # 如果是进攻的话
+            if re:
+                # 开始计数
+                revenge = list(filter(lambda item: item['user_id'] == user_id, otherUser["revenge"]))
+                if len(revenge):
+                    if revenge[0]["num"] >= 6:
+                        msg = "仇恨值已满，不可进攻"
+                        break
+                    else:
+                        revenge[0]["num"] += 1
+                else:
+                    otherUser["revenge"].append({
+                        "user_id":user_id,
+                        "nickname":user["nickname"],
+                        "num":1,
+                        "revenge":0
+                    })
+            else:
+                # 开始计数
+                revenge = list(filter(lambda item: nickname in item["nickname"], user["revenge"]))
+                if len(revenge):
+                    if revenge[0]["revenge"] >= revenge[0]["num"]:
+                        msg += "\n已完成复仇"
+                        break
+                    else:
+                        revenge[0]["revenge"] += 1
+                else:
+                     return "没有仇怨"
             [msgs,atc,user,otherUser] = sBattle(atc,user,otherUser)
             msg += msgs
             num -= 1
@@ -222,7 +257,7 @@ def sBattle(atc,user,otherUser): # 进攻部分
                 userIdol["nickname"], otherUserIdol["nickname"])
             battleSkill = False
 
-        elif userIdol["skill"] == "一击致命" and random.uniform(1, 100)<=7:
+        elif userIdol["skill"] == "一击致命" and random.uniform(1, 100)<=10:
             [msgs,user,userIdol,otherUser,otherUserIdol] = skill.BlastABall(user,userIdol,otherUser,otherUserIdol)
             battleSkill = False
 
@@ -230,7 +265,7 @@ def sBattle(atc,user,otherUser): # 进攻部分
             [msgs,user,userIdol,otherUser,otherUserIdol] = skill.Backstab(user,userIdol,otherUser,otherUserIdol)
             battleSkill = False
 
-        elif userIdol["skill"] == "觉醒" and userIdol['attack'] > otherUserIdol['defense'] and random.uniform(1, 100)<=20:
+        elif userIdol["skill"] == "觉醒" and userIdol['attack'] > otherUserIdol['defense'] and random.uniform(1, 100)<=15:
             # 确定会造成伤害
             [msgs,user,userIdol,otherUser,otherUserIdol] = skill.awaken(user,userIdol,otherUser,otherUserIdol)
             battleSkill = False
@@ -263,7 +298,6 @@ def sBattle(atc,user,otherUser): # 进攻部分
             otherUserIdol['life'] -= life  # 剩余生命值
             [msga,user,userIdol,otherUser,otherUserIdol] = skill.DeathNot(user,userIdol,otherUser,otherUserIdol)
             msgs += msga
-            
     userIdol['battle'] -= 1  # 可攻击次数减一
     atc.remove(userIdol)
     return [msgs,atc,user,otherUser]
@@ -432,6 +466,8 @@ def nchange(user_id, m="N"):# 融化
         n = 10
     elif m == "R":
         n = 5
+    elif m == "SR":
+        n = 2
     else:
         return ''
     msg = "\n请先招募"
@@ -561,7 +597,7 @@ def dead(user_id):# 已阵亡
     return msg
 
 
-def levelProtect(userAll):# 弱小保护
+def levelProtect(userAll):# 排名
     for item in userAll:
         allIdol = item["idol"] + item["otherIdol"]
         allIdol = sorted(
@@ -573,6 +609,11 @@ def levelProtect(userAll):# 弱小保护
     userAll = sorted(userAll,
                      key=lambda i: i["power"],
                      reverse=True)
+    for i in range(len(userAll)):
+        userAll[i]['KO'] = i+1
+    ini = setting.openjson('ini')
+    ini['allUser'] = userAll[-1]['KO']
+    setting.writejson(ini,'ini')
     return userAll
 
 def skills():
@@ -662,4 +703,34 @@ def blood(user_id):
         msg = "你的残血："
         for item in noblood:
             msg += "%s %d/%d、" % (item["nickname"],item["life"],item["alllife"])
+    return msg
+
+def revenge(user_id):
+    msg = "请先招募"
+    userAll = setting.openjson('chess/user')  # 打开本地user缓存到 userAll
+    # 判断用户在不在
+    user = list(filter(lambda item: item['user_id'] == user_id, userAll))
+    if len(user):
+        if user[0]["uninstall"]:
+            return "你已卸载退游"
+        # 开始复仇
+        msg = ''
+        revenges = list(filter(lambda x:x['revenge'] < x['num'] ,user[0]["revenge"]))
+        if not len(revenges):
+            return False
+        for item in revenges:
+            msg += "%s\n" % item["nickname"][0]
+    return msg
+
+def getDui(user_id):
+    msg = "请先招募"
+    userAll = setting.openjson('chess/user')  # 打开本地user缓存到 userAll
+    # 判断用户在不在
+    user = list(filter(lambda item: item['user_id'] == user_id, userAll))
+    if len(user):
+        if user[0]["uninstall"]:
+            return "你已卸载退游"
+        # 开始复仇
+        duishou = random.choice(list(filter(lambda item: item['user_id'] != user_id and user_id not in [j['user_id'] for j in item['revenge']] and item['power']>0, userAll)))
+        msg = duishou['nickname'][1] if len(duishou['nickname']) >1 else duishou['nickname'][0]
     return msg
