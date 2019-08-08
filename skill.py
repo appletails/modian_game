@@ -2,21 +2,21 @@
 import random
 import setting
 
-def DeathNot(user,userIdol,otherUser,otherUserIdol):
+def DeathNot(user,userIdol,otherUser,otherUserIdol,oneSkill = False):
     msga = ''
     if otherUserIdol['life']<= 0: # 被攻击死亡
-        otherUserIdol['life'] = 0
-        otherUser['idol'].remove(otherUserIdol)
+        otherUser['idol'] = list(filter(lambda x:x['nickname'] != otherUserIdol['nickname'],otherUser['idol']))
         if len(otherUser['otherIdol']) and otherUser['otherIdol'][0]["life"] > 0: # 如果场下存在存活的角色
             otherUser['idol'].append(otherUser['otherIdol'][0])
             otherUser['otherIdol'].remove(otherUser['otherIdol'][0])
+        otherUserIdol['life'] = 0
         otherUser['otherIdol'].append(otherUserIdol)
         msga += "\n【%s】战死沙场" % otherUserIdol["nickname"]
         # 开始分配道具
         n = random.uniform(1, 100)
-        list1 = [40,70,90,100]
-        list2 = [25,50,75,100]
-        list3 = [5,30,60,100]
+        list1 = [40,80,86,93,100]
+        list2 = [20,40,60,80,100]
+        list3 = [5,30,50,75,100]
         ini = setting.openjson('ini')
         Ko = int(user['KO']/ini['allUser']*100)
         if Ko<=25:
@@ -25,6 +25,8 @@ def DeathNot(user,userIdol,otherUser,otherUserIdol):
             Probably = list2
         else:
             Probably = list1
+        if oneSkill:
+            Probably = [101,0,0,0]
         if n <= Probably[0]: # 小星星
             # 看看背包里有没有
             hasProp = list(filter(lambda x:x["name"] == "小星星",user["package"]))
@@ -46,7 +48,7 @@ def DeathNot(user,userIdol,otherUser,otherUserIdol):
                 filter(lambda item: item['nickname'] == nickname, userAllIdol))
             if not len(has):
                 # 在库中找到一级的该角色
-                path = "chess/%s" % otherUserIdol["level"].lower()
+                path = "chess/idol/%s" % otherUserIdol["level"].lower()
                 idol = list(
                     filter(lambda item: item['nickname'] == nickname, setting.openjson(path)))[0]
                 userAllIdol.append(idol)
@@ -66,8 +68,8 @@ def DeathNot(user,userIdol,otherUser,otherUserIdol):
                     hasIdol["life"] += life
                     hasIdol["alllife"] += life
                     hasIdol["defense"] += defense
-                    if hasIdol["level"] in ["R","N"]:
-                        hasIdol["lock"] = True
+                    # if hasIdol["level"] in ["R","N"]:
+                    #     hasIdol["lock"] = True
                     msga += "\n【%s】升星！\n星级：%s \n[CQ:emoji,id=9876]️%s ↑ %s\n[CQ:emoji,id=128737]️%s ↑ %s\n[CQ:emoji,id=9829]%s ↑ %s" % (
                         hasIdol["nickname"], setting.levelN(hasIdol["star"]), hasIdol["attack"], attack, hasIdol["defense"], defense, hasIdol["life"], life)
                     if hasIdol["level"] in ["N","R","SR"] and hasIdol["star"] >= 4 and hasIdol["skill"] == "未知": # 获得技能
@@ -90,6 +92,17 @@ def DeathNot(user,userIdol,otherUser,otherUserIdol):
             msga += "\n【%s】获得战利品【技能书】" % user["nickname"][0]
         elif n <= Probably[3]: # 治疗药水
             # 看看背包里有没有
+            hasProp = list(filter(lambda x:x["name"] == "复活药水",user["package"]))
+            if len(hasProp):
+                hasProp[0]["num"] += 1
+            else:
+                user["package"].append({
+                    "name":"复活药水",
+                    "num": 1
+                })
+            msga += "\n【%s】获得战利品【复活药水】" % user["nickname"][0]
+        elif n <= Probably[4]: # 治疗药水
+            # 看看背包里有没有
             hasProp = list(filter(lambda x:x["name"] == "治疗药水",user["package"]))
             if len(hasProp):
                 hasProp[0]["num"] += 1
@@ -100,11 +113,11 @@ def DeathNot(user,userIdol,otherUser,otherUserIdol):
                 })
             msga += "\n【%s】获得战利品【治疗药水】" % user["nickname"][0]
     if userIdol['life']<= 0: # 主动攻击死亡
-        userIdol['life'] = 0
-        user['idol'].remove(userIdol)
-        if user['otherIdol'][0]["life"] > 0:
+        user['idol'] = list(filter(lambda x:x['nickname'] != userIdol['nickname'],user['idol']))
+        if len(user['otherIdol']) and  user['otherIdol'][0]["life"] > 0:
             user['idol'].append(user['otherIdol'][0])
             user['otherIdol'].remove(user['otherIdol'][0])
+        userIdol['life'] = 0
         user['otherIdol'].append(userIdol)
         msga += "\n【%s】战死沙场" % userIdol["nickname"]
     return [msga,user,userIdol,otherUser,otherUserIdol]
@@ -113,7 +126,7 @@ def BlastABall(user,userIdol,otherUser,otherUserIdol): # 一击致命
     msgs = "\n【%s *一击致命*】VS【%s】" % (
         userIdol["nickname"], otherUserIdol["nickname"])
     otherUserIdol['life'] = 0
-    [msga,user,userIdol,otherUser,otherUserIdol] = DeathNot(user,userIdol,otherUser,otherUserIdol)
+    [msga,user,userIdol,otherUser,otherUserIdol] = DeathNot(user,userIdol,otherUser,otherUserIdol,True)
     msgs += msga
     return [msgs,user,userIdol,otherUser,otherUserIdol]
 

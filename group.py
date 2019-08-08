@@ -190,6 +190,10 @@ def handle_msg(context):
             msg = "[CQ:at,qq=%d]\n" % context['user_id']
             msg += chess.getDui(context['user_id'])
             bot.send(context, msg)
+        elif context['message'] == "全部解锁":
+            msg = "[CQ:at,qq=%d]\n" % context['user_id']
+            msg += chess.alllockOn(context['user_id'])
+            bot.send(context, msg)
 
 
 

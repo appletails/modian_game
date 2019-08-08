@@ -37,6 +37,10 @@ def reset():
       for item in user['otherIdol']:
         if item["life"] < item['alllife']:
           item["life"] = item['alllife']
+      addUser = 6 - len(user['idol'])
+      if addUser:
+          user['idol'] = user['idol']+user['otherIdol'][:addUser]
+          user['otherIdol'] = user['otherIdol'][addUser:]
     setting.writejson(userAll,'chess/user')
 
 # 开始定时任务

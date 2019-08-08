@@ -1,10 +1,7 @@
 /__pycache__/
 /.vscode/
 /.idea/
-/jsons/data.json
-/jsons/chess备份/
 /jsons/chess/user.json
-/jsons/chess/users.json
+/jsons/chess/lineup.json
 *.log
 tail.py
-test.py
